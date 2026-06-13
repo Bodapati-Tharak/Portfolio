@@ -1,0 +1,267 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ========================
+// AUTH
+// ========================
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  role          Role      @default(USER)
+  accounts      Account[]
+  sessions      Session[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+// ========================
+// PROJECTS
+// ========================
+model Project {
+  id              String        @id @default(cuid())
+  title           String
+  slug            String        @unique
+  description     String        @db.Text
+  longDescription String?       @db.Text
+  category        String
+  techStack       String[]
+  githubUrl       String?
+  liveUrl         String?
+  thumbnail       String?
+  images          String[]
+  featured        Boolean       @default(false)
+  displayOrder    Int           @default(0)
+  status          ProjectStatus @default(COMPLETED)
+  completedAt     DateTime?
+  features        String[]
+  challenges      String?       @db.Text
+  solutions       String?       @db.Text
+  lessonsLearned  String?       @db.Text
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+enum ProjectStatus {
+  IN_PROGRESS
+  COMPLETED
+  ARCHIVED
+}
+
+// ========================
+// SKILLS
+// ========================
+model Skill {
+  id           String   @id @default(cuid())
+  name         String
+  category     SkillCategory
+  icon         String?
+  level        Int      @default(80) // 0-100
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+enum SkillCategory {
+  PROGRAMMING
+  WEB_DEVELOPMENT
+  AI_ML
+  CLOUD
+  DATABASE
+  TOOLS
+  LANGUAGES
+}
+
+// ========================
+// EXPERIENCE
+// ========================
+model Experience {
+  id               String    @id @default(cuid())
+  company          String
+  companyLogo      String?
+  companyUrl       String?
+  role             String
+  location         String?
+  locationType     String?   // remote, hybrid, onsite
+  startDate        DateTime
+  endDate          DateTime?
+  current          Boolean   @default(false)
+  description      String    @db.Text
+  responsibilities String[]
+  technologies     String[]
+  achievements     String[]
+  displayOrder     Int       @default(0)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+}
+
+// ========================
+// EDUCATION
+// ========================
+model Education {
+  id           String   @id @default(cuid())
+  college      String
+  degree       String
+  field        String
+  cgpa         Float?
+  maxCgpa      Float?   @default(10.0)
+  startYear    Int
+  endYear      Int?
+  current      Boolean  @default(false)
+  description  String?  @db.Text
+  coursework   String[]
+  achievements String[]
+  logo         String?
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// ========================
+// CERTIFICATIONS
+// ========================
+model Certification {
+  id            String   @id @default(cuid())
+  title         String
+  issuer        String
+  issuerLogo    String?
+  date          DateTime
+  expiryDate    DateTime?
+  credentialId  String?
+  credentialUrl String?
+  image         String?
+  description   String?  @db.Text
+  skills        String[]
+  displayOrder  Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// ========================
+// ACHIEVEMENTS
+// ========================
+model Achievement {
+  id          String          @id @default(cuid())
+  title       String
+  type        AchievementType
+  description String          @db.Text
+  date        DateTime
+  url         String?
+  image       String?
+  position    String?
+  organizer   String?
+  displayOrder Int            @default(0)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+}
+
+enum AchievementType {
+  HACKATHON
+  AWARD
+  OPEN_SOURCE
+  PUBLIC_SPEAKING
+  COMPETITION
+  OTHER
+}
+
+// ========================
+// ABOUT SECTION
+// ========================
+model AboutSection {
+  id          String   @id @default(cuid())
+  name        String
+  title       String
+  bio         String   @db.Text
+  shortBio    String?
+  profilePhoto String?
+  resumeUrl   String?
+  email       String?
+  phone       String?
+  location    String?
+  available   Boolean  @default(true)
+  socialLinks Json     @default("{}")
+  stats       Json     @default("{}")
+  updatedAt   DateTime @updatedAt
+  createdAt   DateTime @default(now())
+}
+
+// ========================
+// CONTACT MESSAGES
+// ========================
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  subject   String?
+  message   String   @db.Text
+  read      Boolean  @default(false)
+  replied   Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+// ========================
+// MEDIA ASSETS
+// ========================
+model MediaAsset {
+  id        String   @id @default(cuid())
+  publicId  String   @unique
+  url       String
+  secureUrl String
+  format    String?
+  width     Int?
+  height    Int?
+  bytes     Int?
+  folder    String?
+  tags      String[]
+  createdAt DateTime @default(now())
+}

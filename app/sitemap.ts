@@ -1,0 +1,30 @@
+import { MetadataRoute } from 'next';
+import { prisma } from '@/lib/prisma';
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://yourportfolio.com';
+
+  let projects: Array<{ slug: string; updatedAt: Date }> = [];
+  try {
+    projects = await prisma.project.findMany({ select: { slug: true, updatedAt: true } });
+  } catch {
+    // DB may not be available at build time — skip project URLs
+  }
+
+  const projectUrls = projects.map((project) => ({
+    url: `${baseUrl}/projects/${project.slug}`,
+    lastModified: project.updatedAt,
+    changeFrequency: 'monthly' as const,
+    priority: 0.8,
+  }));
+
+  return [
+    {
+      url: baseUrl,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 1,
+    },
+    ...projectUrls,
+  ];
+}
